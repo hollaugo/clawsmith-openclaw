@@ -171,7 +171,12 @@ export function createSignalEventHandler(deps: SignalEventHandlerDeps) {
       logVerbose(`signal inbound: from=${ctxPayload.From} len=${body.length} preview="${preview}"`);
     }
 
-    const prefixContext = createReplyPrefixContext({ cfg: deps.cfg, agentId: route.agentId });
+    const prefixContext = createReplyPrefixContext({
+      cfg: deps.cfg,
+      agentId: route.agentId,
+      channel: "signal",
+      accountId: route.accountId,
+    });
 
     const typingCallbacks = createTypingCallbacks({
       start: async () => {

@@ -98,6 +98,8 @@ export type GoogleChatAccountConfig = {
    *   If configured, falls back to message mode with a warning.
    */
   typingIndicator?: "none" | "message" | "reaction";
+  /** Per-channel outbound response prefix override. */
+  responsePrefix?: string;
 };
 
 export type GoogleChatConfig = {

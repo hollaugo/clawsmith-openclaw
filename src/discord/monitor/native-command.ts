@@ -795,7 +795,10 @@ async function dispatchDiscordCommandInteraction(params: {
     ctx: ctxPayload,
     cfg,
     dispatcherOptions: {
-      responsePrefix: resolveEffectiveMessagesConfig(cfg, route.agentId).responsePrefix,
+      responsePrefix: resolveEffectiveMessagesConfig(cfg, route.agentId, {
+        channel: "discord",
+        accountId: route.accountId,
+      }).responsePrefix,
       humanDelay: resolveHumanDelayConfig(cfg, route.agentId),
       deliver: async (payload) => {
         try {

@@ -334,7 +334,12 @@ export async function processDiscordMessage(ctx: DiscordMessagePreflightContext)
     ? deliverTarget.slice("channel:".length)
     : message.channelId;
 
-  const prefixContext = createReplyPrefixContext({ cfg, agentId: route.agentId });
+  const prefixContext = createReplyPrefixContext({
+    cfg,
+    agentId: route.agentId,
+    channel: "discord",
+    accountId: route.accountId,
+  });
   const tableMode = resolveMarkdownTableMode({
     cfg,
     channel: "discord",

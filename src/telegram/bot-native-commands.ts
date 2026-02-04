@@ -551,7 +551,10 @@ export const registerTelegramNativeCommands = ({
             ctx: ctxPayload,
             cfg,
             dispatcherOptions: {
-              responsePrefix: resolveEffectiveMessagesConfig(cfg, route.agentId).responsePrefix,
+              responsePrefix: resolveEffectiveMessagesConfig(cfg, route.agentId, {
+                channel: "telegram",
+                accountId: route.accountId,
+              }).responsePrefix,
               deliver: async (payload, _info) => {
                 const result = await deliverReplies({
                   replies: [payload],

@@ -142,6 +142,8 @@ export type SlackAccountConfig = {
   channels?: Record<string, SlackChannelConfig>;
   /** Heartbeat visibility settings for this channel. */
   heartbeat?: ChannelHeartbeatVisibilityConfig;
+  /** Per-channel outbound response prefix override. */
+  responsePrefix?: string;
 };
 
 export type SlackConfig = {

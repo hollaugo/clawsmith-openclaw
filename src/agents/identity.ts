@@ -53,7 +53,31 @@ export function resolveMessagePrefix(
   return resolveIdentityNamePrefix(cfg, agentId) ?? opts?.fallback ?? "[openclaw]";
 }
 
-export function resolveResponsePrefix(cfg: OpenClawConfig, agentId: string): string | undefined {
+export function resolveResponsePrefix(
+  cfg: OpenClawConfig,
+  agentId: string,
+  opts?: { channel?: string; accountId?: string },
+): string | undefined {
+  // L1: Channel account level
+  if (opts?.channel && opts?.accountId) {
+    const channelCfg = (cfg.channels as Record<string, any>)?.[opts.channel];
+    const accountPrefix = channelCfg?.accounts?.[opts.accountId]?.responsePrefix;
+    if (accountPrefix !== undefined) {
+      if (accountPrefix === "auto") return resolveIdentityNamePrefix(cfg, agentId);
+      return accountPrefix;
+    }
+  }
+
+  // L2: Channel level
+  if (opts?.channel) {
+    const channelPrefix = (cfg.channels as Record<string, any>)?.[opts.channel]?.responsePrefix;
+    if (channelPrefix !== undefined) {
+      if (channelPrefix === "auto") return resolveIdentityNamePrefix(cfg, agentId);
+      return channelPrefix;
+    }
+  }
+
+  // L4: Global level
   const configured = cfg.messages?.responsePrefix;
   if (configured !== undefined) {
     if (configured === "auto") {
@@ -67,14 +91,22 @@ export function resolveResponsePrefix(cfg: OpenClawConfig, agentId: string): str
 export function resolveEffectiveMessagesConfig(
   cfg: OpenClawConfig,
   agentId: string,
-  opts?: { hasAllowFrom?: boolean; fallbackMessagePrefix?: string },
+  opts?: {
+    hasAllowFrom?: boolean;
+    fallbackMessagePrefix?: string;
+    channel?: string;
+    accountId?: string;
+  },
 ): { messagePrefix: string; responsePrefix?: string } {
   return {
     messagePrefix: resolveMessagePrefix(cfg, agentId, {
       hasAllowFrom: opts?.hasAllowFrom,
       fallback: opts?.fallbackMessagePrefix,
     }),
-    responsePrefix: resolveResponsePrefix(cfg, agentId),
+    responsePrefix: resolveResponsePrefix(cfg, agentId, {
+      channel: opts?.channel,
+      accountId: opts?.accountId,
+    }),
   };
 }
 

@@ -71,6 +71,8 @@ export type IMessageAccountConfig = {
   >;
   /** Heartbeat visibility settings for this channel. */
   heartbeat?: ChannelHeartbeatVisibilityConfig;
+  /** Per-channel outbound response prefix override. */
+  responsePrefix?: string;
 };
 
 export type IMessageConfig = {

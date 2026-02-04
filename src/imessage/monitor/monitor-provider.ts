@@ -610,7 +610,12 @@ export async function monitorIMessageProvider(opts: MonitorIMessageOpts = {}): P
       );
     }
 
-    const prefixContext = createReplyPrefixContext({ cfg, agentId: route.agentId });
+    const prefixContext = createReplyPrefixContext({
+      cfg,
+      agentId: route.agentId,
+      channel: "imessage",
+      accountId: route.accountId,
+    });
 
     const dispatcher = createReplyDispatcher({
       responsePrefix: prefixContext.responsePrefix,

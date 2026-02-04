@@ -84,6 +84,8 @@ export type SignalAccountConfig = {
   reactionLevel?: SignalReactionLevel;
   /** Heartbeat visibility settings for this channel. */
   heartbeat?: ChannelHeartbeatVisibilityConfig;
+  /** Per-channel outbound response prefix override. */
+  responsePrefix?: string;
 };
 
 export type SignalConfig = {

@@ -65,6 +65,7 @@ export async function routeReply(params: RouteReplyParams): Promise<RouteReplyRe
           sessionKey: params.sessionKey,
           config: cfg,
         }),
+        { channel: typeof channel === "string" ? channel : undefined, accountId },
       ).responsePrefix
     : cfg.messages?.responsePrefix === "auto"
       ? undefined
