@@ -501,6 +501,56 @@ describe("runCronIsolatedAgentTurn", () => {
     });
   });
 
+  it("uses post-subagent summary when initial reply is a spawn/auto-announce ack", async () => {
+    await withTempHome(async (home) => {
+      const storePath = await writeSessionStore(home);
+      const deps: CliDeps = {
+        sendMessageWhatsApp: vi.fn(),
+        sendMessageTelegram: vi.fn(),
+        sendMessageDiscord: vi.fn(),
+        sendMessageSignal: vi.fn(),
+        sendMessageIMessage: vi.fn(),
+      };
+      const initialReply =
+        "Subagent spawned to search for Oceanside weather. It'll auto-announce when done.";
+      const finalReply =
+        "Oceanside is 62F and partly cloudy with light winds. Tonight's low is around 54F.";
+      vi.mocked(runEmbeddedPiAgent).mockResolvedValue({
+        payloads: [{ text: initialReply }],
+        meta: {
+          durationMs: 5,
+          agentMeta: { sessionId: "s", provider: "p", model: "m" },
+        },
+      });
+      // Simulate the race where active descendants are not observed immediately,
+      // but the final synthesis is already present by the time we read history.
+      vi.mocked(countActiveDescendantRuns).mockReturnValue(0);
+      vi.mocked(readLatestAssistantReply).mockResolvedValue(finalReply);
+
+      const res = await runCronIsolatedAgentTurn({
+        cfg: makeCfg(home, storePath, {
+          channels: { telegram: { botToken: "t-1" } },
+        }),
+        deps,
+        job: {
+          ...makeJob({ kind: "agentTurn", message: "do it" }),
+          delivery: { mode: "announce", channel: "telegram", to: "123" },
+        },
+        message: "do it",
+        sessionKey: "cron:job-1",
+        lane: "cron",
+      });
+
+      expect(res.status).toBe("ok");
+      expect(runSubagentAnnounceFlow).toHaveBeenCalledTimes(1);
+      const announceArgs = vi.mocked(runSubagentAnnounceFlow).mock.calls[0]?.[0] as
+        | { roundOneReply?: string }
+        | undefined;
+      expect(announceArgs?.roundOneReply).toBe(finalReply);
+      expect(deps.sendMessageTelegram).not.toHaveBeenCalled();
+    });
+  });
+
   it("announces unchanged substantive cron summary after descendants settle", async () => {
     await withTempHome(async (home) => {
       const storePath = await writeSessionStore(home);
