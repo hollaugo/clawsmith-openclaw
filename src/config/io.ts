@@ -165,19 +165,67 @@ function collectEnvRefPaths(value: unknown, path: string, output: Map<string, st
   }
 }
 
-function collectPatchPaths(patch: unknown, path: string, output: Set<string>): void {
-  if (!isPlainObject(patch)) {
-    output.add(path);
+function collectChangedPaths(
+  base: unknown,
+  target: unknown,
+  path: string,
+  output: Set<string>,
+): void {
+  if (Array.isArray(base) && Array.isArray(target)) {
+    const max = Math.max(base.length, target.length);
+    for (let index = 0; index < max; index += 1) {
+      const childPath = path ? `${path}[${index}]` : `[${index}]`;
+      if (index >= base.length || index >= target.length) {
+        output.add(childPath);
+        continue;
+      }
+      collectChangedPaths(base[index], target[index], childPath, output);
+    }
     return;
   }
-  for (const [key, value] of Object.entries(patch)) {
-    const childPath = path ? `${path}.${key}` : key;
-    if (isPlainObject(value)) {
-      collectPatchPaths(value, childPath, output);
-      continue;
+  if (isPlainObject(base) && isPlainObject(target)) {
+    const keys = new Set([...Object.keys(base), ...Object.keys(target)]);
+    for (const key of keys) {
+      const childPath = path ? `${path}.${key}` : key;
+      const hasBase = key in base;
+      const hasTarget = key in target;
+      if (!hasTarget || !hasBase) {
+        output.add(childPath);
+        continue;
+      }
+      collectChangedPaths(base[key], target[key], childPath, output);
     }
-    output.add(childPath);
+    return;
   }
+  if (!isDeepStrictEqual(base, target)) {
+    output.add(path);
+  }
+}
+
+function parentPath(value: string): string {
+  if (!value) {
+    return "";
+  }
+  if (value.endsWith("]")) {
+    const index = value.lastIndexOf("[");
+    return index > 0 ? value.slice(0, index) : "";
+  }
+  const index = value.lastIndexOf(".");
+  return index >= 0 ? value.slice(0, index) : "";
+}
+
+function isPathChanged(path: string, changedPaths: Set<string>): boolean {
+  if (changedPaths.has(path)) {
+    return true;
+  }
+  let current = parentPath(path);
+  while (current) {
+    if (changedPaths.has(current)) {
+      return true;
+    }
+    current = parentPath(current);
+  }
+  return changedPaths.has("");
 }
 
 function restoreEnvRefsFromMap(
@@ -187,7 +235,7 @@ function restoreEnvRefsFromMap(
   changedPaths: Set<string>,
 ): unknown {
   if (typeof value === "string") {
-    if (!changedPaths.has(path)) {
+    if (!isPathChanged(path, changedPaths)) {
       const original = envRefMap.get(path);
       if (original !== undefined) {
         return original;
@@ -649,7 +697,7 @@ export function createConfigIO(overrides: ConfigIoDeps = {}) {
         if (collected.size > 0) {
           envRefMap = collected;
           changedPaths = new Set<string>();
-          collectPatchPaths(patch, "", changedPaths);
+          collectChangedPaths(snapshot.config, cfg, "", changedPaths);
         }
       } catch {
         envRefMap = null;
