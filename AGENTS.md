@@ -174,6 +174,30 @@
 - For manual `openclaw message send` messages that include `!`, use the heredoc pattern noted below to avoid the Bash tool’s escaping.
 - Release guardrails: do not change version numbers without operator’s explicit consent; always ask permission before running any npm publish/release step.
 
+## Webflow SEO/AEO/GEO policy
+
+- GEO means **Generative Engine Optimization** in this workspace (not geographic SEO).
+- Token routing:
+  - Primary token for data operations: `WEBFLOW_SITE_API_TOKEN`
+  - Required default site target: `WEBFLOW_SITE_ID`
+  - `WEBFLOW_WORKSPACE_API_TOKEN` is optional/reserved and not primary for site data writes.
+- Safety mode: draft-first with explicit approval phrase (`APPROVE_WEBFLOW_DRAFT_CHANGES`) before writes.
+- Required workflow:
+  1. `audit_webflow_site` (discovery + findings)
+  2. `plan_webflow_changes` (explicit per-object patch plan)
+  3. `apply_webflow_changes` only after explicit approval phrase
+  4. verify by re-reading updated records and report `successful_ops` + `blocked_ops`
+- Always blocked by default:
+  - schema changes (collections/fields)
+  - destructive deletes
+  - publish/live operations
+- Allowed write scope (approval-gated):
+  - page metadata updates
+  - component content/property updates
+  - CMS item create/update
+- If only workspace token is present or site token is missing, run read-only advisory mode and return remediation steps.
+- Never print raw tokens in logs or outputs.
+
 ## NPM + 1Password (publish/verify)
 
 - Use the 1password skill; all `op` commands must run inside a fresh tmux session.
