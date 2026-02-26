@@ -351,6 +351,10 @@ function classifyInbound(message: PollMessage): ClassificationResult {
     "pricing",
     "need help",
     "looking for",
+    "consulting opportunity",
+    "paid consulting",
+    "expert network",
+    "advisory call",
   ];
   const automatedSenderSignals = [
     "no-reply",
@@ -442,6 +446,14 @@ function classifyInbound(message: PollMessage): ClassificationResult {
     "book a call",
     "campaign",
     "collaboration",
+    "consulting opportunity",
+    "paid consulting",
+    "expert network",
+    "advisory call",
+    "alphasights",
+    "guidepoint",
+    "glg",
+    "third bridge",
   ];
   const supportSignals = ["support", "help", "issue", "error", "problem", "unable", "bug"];
   const ignoreSignals = [

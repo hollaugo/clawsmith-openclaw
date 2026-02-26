@@ -174,6 +174,76 @@ function asActivityRow(value: unknown): ActivityRow | undefined {
   };
 }
 
+function includesAny(text: string, signals: string[]): boolean {
+  return signals.some((signal) => text.includes(signal));
+}
+
+function isLikelyBusinessLead(activity: ActivityRow): boolean {
+  const text =
+    `${activity.subject ?? ""} ${activity.from_name ?? ""} ${activity.from_email ?? ""}`.toLowerCase();
+  const fromEmail = (activity.from_email || "").toLowerCase();
+  const senderLocal = fromEmail.includes("@") ? fromEmail.split("@")[0] || "" : "";
+  const senderDomain = fromEmail.includes("@") ? fromEmail.split("@")[1] || "" : "";
+
+  const automatedSenderSignals = [
+    "no-reply",
+    "noreply",
+    "do-not-reply",
+    "notifications",
+    "digest",
+    "newsletter",
+    "jobalerts",
+  ];
+  const automatedTextSignals = [
+    "job alert",
+    "recommended jobs",
+    "linkedin jobs",
+    "daily digest",
+    "weekly digest",
+    "unsubscribe",
+    "manage preferences",
+  ];
+  const blockedDomains = [
+    "linkedin.com",
+    "indeed.com",
+    "glassdoor.com",
+    "ziprecruiter.com",
+    "monster.com",
+    "mailchimp.com",
+    "sendgrid.net",
+    "stripe.com",
+    "paypal.com",
+    "intuit.com",
+    "quickbooks.com",
+  ];
+
+  const leadSignals = [
+    "consulting opportunity",
+    "paid consulting",
+    "consulting",
+    "advisor",
+    "advisory",
+    "book a call",
+    "request a quote",
+    "proposal",
+    "pricing",
+    "sponsorship",
+    "partnership",
+    "alphasights",
+    "guidepoint",
+    "third bridge",
+    "glg",
+  ];
+
+  const looksAutomated =
+    includesAny(senderLocal, automatedSenderSignals) || includesAny(text, automatedTextSignals);
+  if (looksAutomated || blockedDomains.includes(senderDomain)) {
+    return false;
+  }
+
+  return includesAny(text, leadSignals);
+}
+
 async function supabaseRequest<T>(options: {
   supabaseUrl: string;
   serviceKey: string;
@@ -403,7 +473,7 @@ async function main() {
     "select",
     "id,account_email,from_email,from_name,subject,received_at,classification,crm_drafts(id,status,updated_at)",
   );
-  activitiesQuery.set("classification", "eq.sales");
+  activitiesQuery.set("classification", "in.(sales,ignore)");
   activitiesQuery.set("received_at", `gte.${sinceIso}`);
   activitiesQuery.set("order", "received_at.desc");
   activitiesQuery.set("limit", String(maxRows));
@@ -419,6 +489,9 @@ async function main() {
     .filter((row): row is ActivityRow => Boolean(row));
 
   const unansweredSalesLeads = salesActivities.filter((activity) => {
+    if (!isLikelyBusinessLead(activity)) {
+      return false;
+    }
     const drafts = Array.isArray(activity.crm_drafts) ? activity.crm_drafts : [];
     return drafts.length === 0;
   });
